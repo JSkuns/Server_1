@@ -11,42 +11,23 @@ public class Server {
 
     public static void main(String[] args) {
 
-        ServerSocket serverSocket = null; // создаём сокет
-        try {
-            serverSocket = new ServerSocket(port);
+        try (ServerSocket serverSocket = new ServerSocket(port)) { // пытаемся создать сервер-сокет
             System.out.println("Server start");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            while (true) {
-                Socket clientSocket = null; // ждем подключения
-                if (serverSocket != null) {
-                    clientSocket = serverSocket.accept();
-                }
-                // для вывода инфы используем объект OutputStream, autoFlush - добавляем данные
-                PrintWriter out = null;
-                // для принятия инфы каждый раз создаётся новый объект InputStreamReader
-                BufferedReader in = null;
-                if (clientSocket != null) {
-                    out = new PrintWriter(clientSocket.getOutputStream(), true);
-                    in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                    // пишем что соединение принято, порт такой-то
-                    System.out.printf("New connection accepted. Port: %d%n", clientSocket.getPort());
-                }
+            Socket clientSocket = serverSocket.accept(); // ожидаем подключения
+            // для вывода инфы используем объект OutputStream, autoFlush - добавляем данные
+            // для принятия инфы каждый раз создаётся новый объект InputStreamReader
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            while (!clientSocket.isClosed()) {
+                // пишем что соединение принято, порт такой-то
+                System.out.printf("New connection accepted. Port: %d%n", clientSocket.getPort());
                 // строка name приняла поток и прочитала
-                String name = null;
-                if (in != null) {
-                    name = in.readLine();
-                }
-                // вывод
-                if (clientSocket != null) {
-                    out.printf("Hi %s, your port is %d%n", name, clientSocket.getPort());
-                }
-                // сокет закрываем
-//                serverSocket.close();
+                String name = in.readLine();
+                // отправляем обратно ответ
+                out.printf("Hi %s, your port is %d%n", name, clientSocket.getPort());
             }
+            // закрываем сокет клиента
+            clientSocket.close();
         } catch (IOException ex) {
             ex.printStackTrace();
         }
